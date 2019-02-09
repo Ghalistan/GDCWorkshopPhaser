@@ -34,9 +34,14 @@ export default class Main extends Phaser.Scene {
         // spawn player
         this.player = this.physics.add.sprite(320, 300, 'player-idle');
         this.player.setCollideWorldBounds(true);
+        this.player.setGravityY(400);
 
         // spawn monster
         this.monster = this.physics.add.group();
+
+        // spawn shot
+        this.bullet = this.physics.add.group();
+        this.bullet
 
         // spawn platforms
         this.platforms = this.physics.add.sprite(320, 240, 'platforms');
@@ -50,7 +55,7 @@ export default class Main extends Phaser.Scene {
 
         // set wave
         this.wave = 0;
-        this.waveBoard = this.add.text(500-16, 16,'Wave: 1', { fontSize: '32px', fill: '#fff' });
+        this.waveBoard = this.add.text(300, 16,'Wave: 1', { fontSize: '32px', fill: '#fff' });
 
         // create floor
         this.floor = this.physics.add.sprite(0, 480).setOrigin(0, 0);
@@ -61,13 +66,13 @@ export default class Main extends Phaser.Scene {
 
         this.floor2 = this.physics.add.sprite(0, 480).setOrigin(0, 0);
         this.floor2.displayWidth = 100;
-        this.floor2.displayHeight = 145;
+        this.floor2.displayHeight = 160;
         this.floor2.setCollideWorldBounds(true);
         this.floor2.body.immovable = true;
 
         this.floor3 = this.physics.add.sprite(640, 480).setOrigin(0, 0);
         this.floor3.displayWidth = 80;
-        this.floor3.displayHeight = 145;
+        this.floor3.displayHeight = 160;
         this.floor3.setCollideWorldBounds(true);
         this.floor3.body.immovable = true;
 
@@ -124,6 +129,13 @@ export default class Main extends Phaser.Scene {
             repeat: 0
         });
 
+        this.anims.create({
+            key: 'shooting',
+            frames: this.anims.generateFrameNumbers('shot', { start: 0, end: 1 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
         // add collider
         this.physics.add.collider(this.player, this.floor);
         this.physics.add.collider(this.player, this.floor2);
@@ -152,12 +164,34 @@ export default class Main extends Phaser.Scene {
             this.waveBoard.setText('Wave: ' + this.wave);
 
             for (var x = 0; x < 10; x++) {
-                var monster = this.monster.create(640, 300, 'monster-idle');
-                monster.flipX = false;
-                monster.anims.play('crab-idle');
-                // this.physics.moveToObject(monster, this.player, 30);
+                var rand = Phaser.Math.Between(0,1);
+                if (rand == 1) {
+                    var monster = this.monster.create(-10, 300, 'monster-idle');
+                    monster.anims.play('crab-idle');
+                } else {
+                    var monster = this.monster.create(650, 300, 'monster-idle');
+                    monster.anims.play('crab-idle');
+                }
             }
         }
+    }
+
+    doShoot(check) {
+        // if (check == true) {
+        //     var bullet = this.bullet.create(this.player.x, this.player.y, 'shot');
+        //     bullet.anims.play('shooting');
+        // } else {
+        //     var bullet = this.bullet.create(this.player.x, this.player.y, 'shot');
+        //     bullet.anims.play('shooting');
+        // }
+        this.time.addEvent({
+            delay: 800,
+            callback: () => {
+                var bullet = this.bullet.create(this.player.x, this.player.y, 'shot');
+                bullet.anims.play('shooting');
+                bullet.body.setVelocityX(450);
+            }
+        })
     }
 
     update()
@@ -188,6 +222,7 @@ export default class Main extends Phaser.Scene {
                 this.player.setVelocityX(0);
                 this.player.anims.play('p-shooti', true);
             }
+            this.doShoot(this.player.flipX);
         } else {
             if (this.cursors.left.isDown) {
                 this.player.flipX = true;
@@ -201,7 +236,6 @@ export default class Main extends Phaser.Scene {
                 this.player.setVelocityX(0);
                 this.player.anims.play('p-idle', true);
             }
-
         }
 
         // jump input
@@ -211,7 +245,12 @@ export default class Main extends Phaser.Scene {
         }
         
         this.monster.children.each(function(enemy) {
-            this.physics.moveToObject(enemy, this.player, 30);
+            if (this.player.x < enemy.x) {
+                enemy.x -= 0.3;
+            } else {
+                enemy.flipX = true;
+                enemy.x += 0.3;
+            }
         }, this);
     }
 }
