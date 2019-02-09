@@ -37,13 +37,6 @@ export default class Main extends Phaser.Scene {
 
         // spawn monster
         this.monster = this.physics.add.group();
-        // for (var x = 0; x < 4; x++) {
-        //     var y = 0;
-        //     this.monster.create(y + 200, 300, 'monster-idle');
-        //     y += 50;
-        // };
-        this.test = this.monster.create(200, 300, 'monster-idle');
-        this.monster.create(500, 300, 'monster-idle');
 
         // spawn platforms
         this.platforms = this.physics.add.sprite(320, 240, 'platforms');
@@ -54,6 +47,10 @@ export default class Main extends Phaser.Scene {
         // set score
         this.score = 0;
         this.scoreBoard = this.add.text(16,16,'score: 0', { fontSize: '32px', fill: '#fff' });
+
+        // set wave
+        this.wave = 0;
+        this.waveBoard = this.add.text(500-16, 16,'Wave: 1', { fontSize: '32px', fill: '#fff' });
 
         // create floor
         this.floor = this.physics.add.sprite(0, 480).setOrigin(0, 0);
@@ -142,17 +139,31 @@ export default class Main extends Phaser.Scene {
     }
 
     monded(player, monster) {
+        monster.body.stop();
         monster.anims.play('enemy-death', true);
         monster.on('animationcomplete', function() {
             monster.destroy();
         });
+    }
+    
+    spawnEnemies() {
+        if (this.monster.countActive(true) == 0) {
+            this.wave += 1;
+            this.waveBoard.setText('Wave: ' + this.wave);
 
-        this.score += 10;
-        this.scoreBoard.setText('Score: ' + this.score);
+            for (var x = 0; x < 10; x++) {
+                var monster = this.monster.create(640, 300, 'monster-idle');
+                monster.flipX = false;
+                monster.anims.play('crab-idle');
+                // this.physics.moveToObject(monster, this.player, 30);
+            }
+        }
     }
 
     update()
     {
+        this.spawnEnemies();
+
         // moving input
         if (!this.player.body.touching.down) {
             if (this.cursors.left.isDown) {
@@ -198,7 +209,9 @@ export default class Main extends Phaser.Scene {
             this.player.setVelocityY(-330);
             this.player.anims.play('p-jump', true);
         }
-
-        this.test.anims.play('crab-idle', true);
+        
+        this.monster.children.each(function(enemy) {
+            this.physics.moveToObject(enemy, this.player, 30);
+        }, this);
     }
 }
