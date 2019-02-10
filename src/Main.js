@@ -39,9 +39,14 @@ export default class Main extends Phaser.Scene {
         // spawn monster
         this.monster = this.physics.add.group();
 
+        // check monster
+        this.spawn = false;
+
         // spawn shot
         this.bullet = this.physics.add.group();
-        this.bullet
+        
+        // check shot
+        this.shooting = false;
 
         // spawn platforms
         this.platforms = this.physics.add.sprite(320, 240, 'platforms');
@@ -55,7 +60,10 @@ export default class Main extends Phaser.Scene {
 
         // set wave
         this.wave = 0;
-        this.waveBoard = this.add.text(300, 16,'Wave: 1', { fontSize: '32px', fill: '#fff' });
+        this.waveBoard = this.add.text(300, 16,'Wave: 0', { fontSize: '32px', fill: '#fff' });
+
+        // check wave
+        this.checkWave = false;
 
         // create floor
         this.floor = this.physics.add.sprite(0, 480).setOrigin(0, 0);
@@ -147,51 +155,110 @@ export default class Main extends Phaser.Scene {
         this.physics.add.collider(this.monster, this.floor3);
         this.physics.add.collider(this.monster, this.platforms);
 
-        this.physics.add.overlap(this.player, this.monster, this.monded, null, this);
+        this.physics.add.overlap(this.bullet, this.monster, this.monded, null, this);
     }
 
-    monded(player, monster) {
+    monded(bullet, monster) {
+        bullet.destroy();
         monster.body.stop();
         monster.anims.play('enemy-death', true);
         monster.on('animationcomplete', function() {
             monster.destroy();
         });
+
+        this.score += 10;
+        this.scoreBoard.setText('Score: ' + this.score);
+    }
+
+    currentWave(wave) {
+        switch (wave) {
+            case 1:
+                return 10;
+            case 2:
+                return 20;
+            default:
+                return 30;
+        }
     }
     
     spawnEnemies() {
-        if (this.monster.countActive(true) == 0) {
-            this.wave += 1;
-            this.waveBoard.setText('Wave: ' + this.wave);
+        // if (this.monster.countActive(true) == 0) {
+        //     if (this.checkWave == false) {
+        //         if (this.spawn == false) {
+        //             do {
+        //                 var rand = Phaser.Math.Between(0,1);
+        //                 if (rand == 1) {
+        //                     var monster = this.monster.create(-10, 300, 'monster-idle');
+        //                     monster.anims.play('crab-idle');
+        //                 } else {
+        //                     var monster = this.monster.create(650, 300, 'monster-idle');
+        //                     monster.anims.play('crab-idle');
+        //                 }
+        //                 this.spawn = true;
 
-            for (var x = 0; x < 10; x++) {
-                var rand = Phaser.Math.Between(0,1);
-                if (rand == 1) {
-                    var monster = this.monster.create(-10, 300, 'monster-idle');
-                    monster.anims.play('crab-idle');
-                } else {
-                    var monster = this.monster.create(650, 300, 'monster-idle');
-                    monster.anims.play('crab-idle');
-                }
-            }
-        }
+        //                 this.time.addEvent({
+        //                     delay: 500,
+        //                     callback: () => {
+        //                         this.spawn = false;
+        //                     }
+        //                 });
+
+        //                 console.log(this.monster.countActive(true), this.wave, this.currentWave(this.wave));
+        //             }
+        //             while (this.monster.countActive(true) == this.currentWave(this.wave));
+        //         }
+        //     }
+        // }
+
+        // if (this.checkWave == false) {
+        //     this.wave += 1;
+        //     this.waveBoard.setText('Wave: ' + this.wave);
+        //     this.checkWave = true;
+
+        //     do {
+        //         if (this.spawn == false) {
+        //             var rand = Phaser.Math.Between(0,1);
+        //             if (rand == 1) {
+        //                 var monster = this.monster.create(-10, 300, 'monster-idle');
+        //                 monster.anims.play('crab-idle');
+        //             } else {
+        //                 var monster = this.monster.create(650, 300, 'monster-idle');
+        //                 monster.anims.play('crab-idle');
+        //             }
+        //             this.spawn = true;
+
+        //             this.time.addEvent({
+        //                 delay: 500,
+        //                 callback: () => {
+        //                     this.spawn = false;
+        //                 }
+        //             });
+        //         }
+        //     }
+        //     while (this.monster.countActive(true) != this.currentWave(this.wave))
+        // }
     }
 
     doShoot(check) {
-        // if (check == true) {
-        //     var bullet = this.bullet.create(this.player.x, this.player.y, 'shot');
-        //     bullet.anims.play('shooting');
-        // } else {
-        //     var bullet = this.bullet.create(this.player.x, this.player.y, 'shot');
-        //     bullet.anims.play('shooting');
-        // }
-        this.time.addEvent({
-            delay: 800,
-            callback: () => {
-                var bullet = this.bullet.create(this.player.x, this.player.y, 'shot');
+        if (this.shooting == false) {
+            if (check == true) {
+                var bullet = this.bullet.create(this.player.x - 20, this.player.y + 15, 'shot');
+                bullet.anims.play('shooting');
+                bullet.body.setVelocityX(-450);
+            } else {
+                var bullet = this.bullet.create(this.player.x + 20, this.player.y + 15, 'shot');
                 bullet.anims.play('shooting');
                 bullet.body.setVelocityX(450);
             }
-        })
+
+            this.shooting = true;
+            this.time.addEvent({
+                delay: 250,
+                callback: () => {
+                    this.shooting = false;
+                }
+            });
+        }
     }
 
     update()
@@ -246,8 +313,10 @@ export default class Main extends Phaser.Scene {
         
         this.monster.children.each(function(enemy) {
             if (this.player.x < enemy.x) {
+                enemy.body.setGravityY(400);
                 enemy.x -= 0.3;
             } else {
+                enemy.body.setGravityY(400);
                 enemy.flipX = true;
                 enemy.x += 0.3;
             }
