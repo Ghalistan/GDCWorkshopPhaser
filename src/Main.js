@@ -6,6 +6,7 @@ export default class Main extends Phaser.Scene {
     preload ()
     {
         // area
+        this.load.image('bg', 'assets/playfield/bg.png');
         this.load.image('area', 'assets/playfield/area.png');
 
         // player
@@ -28,6 +29,7 @@ export default class Main extends Phaser.Scene {
 
     create ()
     {
+        this.add.image(0, 0, 'bg').setOrigin(0, 0);
         // spawn area
         this.bg = this.add.image(0, 0, 'area').setOrigin(0, 0);
 
