@@ -182,61 +182,36 @@ export default class Main extends Phaser.Scene {
     }
     
     spawnEnemies() {
-        // if (this.monster.countActive(true) == 0) {
-        //     if (this.checkWave == false) {
-        //         if (this.spawn == false) {
-        //             do {
-        //                 var rand = Phaser.Math.Between(0,1);
-        //                 if (rand == 1) {
-        //                     var monster = this.monster.create(-10, 300, 'monster-idle');
-        //                     monster.anims.play('crab-idle');
-        //                 } else {
-        //                     var monster = this.monster.create(650, 300, 'monster-idle');
-        //                     monster.anims.play('crab-idle');
-        //                 }
-        //                 this.spawn = true;
+        if (this.checkWave == false) {
+            this.wave += 1;
+            this.waveBoard.setText('Wave: ' + this.wave);
+            this.checkWave = true;
 
-        //                 this.time.addEvent({
-        //                     delay: 500,
-        //                     callback: () => {
-        //                         this.spawn = false;
-        //                     }
-        //                 });
+            if (this.monster.countActive(true) != this.currentWave(this.wave)) {
+                if (this.spawn == false) {
+                    var rand = Phaser.Math.Between(0,1);
+                    if (rand == 1) {
+                        var monster = this.monster.create(-10, 300, 'monster-idle');
+                        monster.anims.play('crab-idle');
+                    } else {
+                        var monster = this.monster.create(650, 300, 'monster-idle');
+                        monster.anims.play('crab-idle');
+                    }
+                }
 
-        //                 console.log(this.monster.countActive(true), this.wave, this.currentWave(this.wave));
-        //             }
-        //             while (this.monster.countActive(true) == this.currentWave(this.wave));
-        //         }
-        //     }
-        // }
-
-        // if (this.checkWave == false) {
-        //     this.wave += 1;
-        //     this.waveBoard.setText('Wave: ' + this.wave);
-        //     this.checkWave = true;
-
-        //     do {
-        //         if (this.spawn == false) {
-        //             var rand = Phaser.Math.Between(0,1);
-        //             if (rand == 1) {
-        //                 var monster = this.monster.create(-10, 300, 'monster-idle');
-        //                 monster.anims.play('crab-idle');
-        //             } else {
-        //                 var monster = this.monster.create(650, 300, 'monster-idle');
-        //                 monster.anims.play('crab-idle');
-        //             }
-        //             this.spawn = true;
-
-        //             this.time.addEvent({
-        //                 delay: 500,
-        //                 callback: () => {
-        //                     this.spawn = false;
-        //                 }
-        //             });
-        //         }
-        //     }
-        //     while (this.monster.countActive(true) != this.currentWave(this.wave))
-        // }
+                this.spawn = true;
+                this.time.addEvent({
+                    delay: 500,
+                    callback: () => {
+                        this.spawn = false;
+                    }
+                });
+            }
+        } else {
+            if (this.monster.countActive(true) == 0) {
+                this.checkWave = false;
+            }
+        }
     }
 
     doShoot(check) {
@@ -311,6 +286,7 @@ export default class Main extends Phaser.Scene {
             this.player.anims.play('p-jump', true);
         }
         
+        // enemy chase player
         this.monster.children.each(function(enemy) {
             if (this.player.x < enemy.x) {
                 enemy.body.setGravityY(400);
