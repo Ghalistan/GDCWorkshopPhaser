@@ -25,11 +25,30 @@ export default class Main extends Phaser.Scene {
 
         // platforms
         this.load.image('platforms', 'assets/platform.png');
+
+        // audio
+        this.load.audio('laser', [
+            'assets/audio/laser.ogg',
+            'assets/audio/laser.mp3'
+        ]);
+        this.load.audio('jump', [
+            'assets/audio/jump.ogg',
+            'assets/audio/jump.wav'
+        ]);
+        this.load.audio('boom', [
+            'assets/audio/boom.ogg',
+            'assets/audio/boom.wav'
+        ]);
+        this.load.audio('bgm', [
+            'assets/audio/bgm.ogg',
+            'assets/audio/bgm.mp3'
+        ]);
     }
 
     create ()
     {
         this.add.image(0, 0, 'bg').setOrigin(0, 0);
+
         // spawn area
         this.bg = this.add.image(0, 0, 'area').setOrigin(0, 0);
 
@@ -55,6 +74,12 @@ export default class Main extends Phaser.Scene {
         this.platforms.setScale(0.8);
         this.platforms.body.immovable = true;
         this.platforms.body.moves = false;
+
+        // setup audio
+        this.lasersound = this.sound.add('laser', { loop: false });
+        this.jumpsound = this.sound.add('jump', { lopp: false });
+        this.boomsound = this.sound.add('boom', { loop: false });
+        this.sound.add('bgm', { loop: true }).play();
 
         // set score
         this.score = 0;
@@ -164,6 +189,7 @@ export default class Main extends Phaser.Scene {
         bullet.destroy();
         monster.body.stop();
         monster.anims.play('enemy-death', true);
+        this.boomsound.play();
         monster.on('animationcomplete', function() {
             monster.destroy();
         });
@@ -213,10 +239,12 @@ export default class Main extends Phaser.Scene {
                 var bullet = this.bullet.create(this.player.x - 20, this.player.y + 15, 'shot');
                 bullet.anims.play('shooting');
                 bullet.body.setVelocityX(-450);
+                this.lasersound.play();
             } else {
                 var bullet = this.bullet.create(this.player.x + 20, this.player.y + 15, 'shot');
                 bullet.anims.play('shooting');
                 bullet.body.setVelocityX(450);
+                this.lasersound.play();
             }
 
             this.shooting = true;
@@ -277,6 +305,7 @@ export default class Main extends Phaser.Scene {
         if (this.cursors.up.isDown && this.player.body.touching.down) {
             this.player.setVelocityY(-330);
             this.player.anims.play('p-jump', true);
+            this.jumpsound.play();
         }
         
         // enemy chase player
