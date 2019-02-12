@@ -73,7 +73,6 @@ export default class Main extends Phaser.Scene {
         this.platforms = this.physics.add.sprite(320, 240, 'platforms');
         this.platforms.setScale(0.8);
         this.platforms.body.immovable = true;
-        this.platforms.body.moves = false;
 
         // setup audio
         this.lasersound = this.sound.add('laser', { loop: false });
@@ -83,11 +82,15 @@ export default class Main extends Phaser.Scene {
 
         // set score
         this.score = 0;
-        this.scoreBoard = this.add.text(16,16,'score: 0', { fontSize: '32px', fill: '#fff' });
+        this.scoreBoard = this.add.text(16, 16,'score: 0', { fontSize: '20px', fill: '#fff' });
 
         // set wave
-        this.wave = 0;
-        this.waveBoard = this.add.text(300, 16,'Wave: 0', { fontSize: '32px', fill: '#fff' });
+        this.wave = 1;
+        this.waveBoard = this.add.text(540, 16,'Wave: 1', { fontSize: '20px', fill: '#fff' });
+
+        // set health
+        this.health = 3;
+        this.healthPoint = this.add.text(280, 16, 'Health: 3', { fontSize: '20px', fill: '#fff', align: 'center' });
 
         // check wave
         this.checkWave = false;
@@ -114,6 +117,7 @@ export default class Main extends Phaser.Scene {
         // add input keys
         this.cursors = this.input.keyboard.createCursorKeys();
         this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.Replay = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
         // create animations player
         this.anims.create({
@@ -158,7 +162,7 @@ export default class Main extends Phaser.Scene {
         });
 
         this.anims.create({
-            key: 'enemy-death',
+            key: 'boom',
             frames: this.anims.generateFrameNumbers('blow', { star: 0, end: 4 }),
             frameRate: 10,
             repeat: 0
@@ -183,15 +187,36 @@ export default class Main extends Phaser.Scene {
         this.physics.add.collider(this.monster, this.platforms);
 
         this.physics.add.overlap(this.bullet, this.monster, this.monded, null, this);
+        this.physics.add.overlap(this.player, this.monster, this.playerhit, null, this);
+    }
+
+    playerhit(player, monster) {
+        if (this.health > 0) {
+            if (player.flipX == false) {
+                player.x -= 30;
+                monster.x += 30;
+            } else {
+                player.x += 30;
+                monster.x -= 30;
+            }
+            this.health -= 1;
+            this.healthPoint.setText('Health: ' + this.health);
+        } else {
+            player.disableBody(true, true);
+            this.add.sprite(player.x, player.y).play('boom', true).on('animationcomplete', function() {
+                this.destroy();
+            });
+            this.healthPoint.setText('You died \n press R to Replay');  
+        }
     }
 
     monded(bullet, monster) {
         bullet.destroy();
-        monster.body.stop();
-        monster.anims.play('enemy-death', true);
+        monster.destroy();
+        var animboom = this.add.sprite(monster.x, monster.y).play('boom', true);
         this.boomsound.play();
-        monster.on('animationcomplete', function() {
-            monster.destroy();
+        animboom.on('animationcomplete', function() {
+            animboom.destroy();
         });
 
         this.score += 10;
@@ -221,11 +246,15 @@ export default class Main extends Phaser.Scene {
                     monster.anims.play('crab-idle');
                 }
                 this.spawn += 1;
+            } else if (this.spawn == this.currentWave(this.wave) && this.monster.countActive(true) == 0) {
+                this.wave += 1;
+                this.waveBoard.setText('Wave: ' + this.wave);
+                this.spawn = 0;
             }
             
             this.checkWave = true;
             this.time.addEvent({
-                delay: 5000,
+                delay: 3000,
                 callback: () => {
                     this.checkWave = false;
                 }
@@ -307,11 +336,16 @@ export default class Main extends Phaser.Scene {
             this.player.anims.play('p-jump', true);
             this.jumpsound.play();
         }
+
+        if (this.Replay.isDown) {
+            this.scene.restart();
+        }
         
         // enemy chase player
         this.monster.children.each(function(enemy) {
             if (this.player.x < enemy.x) {
                 enemy.body.setGravityY(400);
+                enemy.flipX = false; 
                 enemy.x -= 0.3;
             } else {
                 enemy.body.setGravityY(400);
