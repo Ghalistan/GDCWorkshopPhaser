@@ -191,6 +191,8 @@ export default class Main extends Phaser.Scene {
     }
 
     playerhit(player, monster) {
+        this.health -= 1;
+        this.healthPoint.setText('Health: ' + this.health);
         if (this.health > 0) {
             if (player.flipX == false) {
                 player.x -= 30;
@@ -199,8 +201,6 @@ export default class Main extends Phaser.Scene {
                 player.x += 30;
                 monster.x -= 30;
             }
-            this.health -= 1;
-            this.healthPoint.setText('Health: ' + this.health);
         } else {
             player.disableBody(true, true);
             this.add.sprite(player.x, player.y).play('boom', true).on('animationcomplete', function() {
