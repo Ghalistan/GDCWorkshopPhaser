@@ -240,11 +240,11 @@ export default class Main extends Phaser.Scene {
             if(this.spawn != this.currentWave(this.wave)) {
                 var rand = Phaser.Math.Between(0,1);
                 if (rand == 1) {
-                    var monster = this.monster.create(-10, 300, 'monster-idle');
-                    monster.anims.play('crab-idle');
+                    var crab = this.monster.create(-10, 300, 'monster-idle');
+                    crab.anims.play('crab-idle');
                 } else {
-                    var monster = this.monster.create(650, 300, 'monster-idle');
-                    monster.anims.play('crab-idle');
+                    var crab = this.monster.create(650, 300, 'monster-idle');
+                    crab.anims.play('crab-idle');
                 }
                 this.spawn += 1;
             } else if (this.spawn == this.currentWave(this.wave) && this.monster.countActive(true) == 0) {
@@ -264,7 +264,7 @@ export default class Main extends Phaser.Scene {
     }
 
     doShoot(check) {
-        if (this.shooting == false) {
+        if (this.shooting == false && this.health > 0) {
             if (check == true) {
                 var bullet = this.bullet.create(this.player.x - 20, this.player.y + 15, 'shot');
                 bullet.anims.play('shooting');
@@ -344,7 +344,7 @@ export default class Main extends Phaser.Scene {
         }
 
         // enemy chase player
-        this.monster.children.each(function(enemy) {
+        this.monster.children.each(enemy => {
             if (this.player.x < enemy.x) {
                 enemy.body.setGravityY(400);
                 enemy.flipX = false;
@@ -354,6 +354,6 @@ export default class Main extends Phaser.Scene {
                 enemy.flipX = true;
                 enemy.x += 0.3;
             }
-        }, this);
+        });
     }
 }
