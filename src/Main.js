@@ -65,7 +65,7 @@ export default class Main extends Phaser.Scene {
 
         // spawn shot
         this.bullet = this.physics.add.group();
-        
+
         // check shot
         this.shooting = false;
 
@@ -206,7 +206,7 @@ export default class Main extends Phaser.Scene {
             this.add.sprite(player.x, player.y).play('boom', true).on('animationcomplete', function() {
                 this.destroy();
             });
-            this.healthPoint.setText('You died \n press R to Replay');  
+            this.healthPoint.setText('You died \n press R to Replay');
         }
     }
 
@@ -226,14 +226,14 @@ export default class Main extends Phaser.Scene {
     currentWave(wave) {
         switch (wave) {
             case 1:
-                return 10;
+                return 5;
             case 2:
-                return 20;
+                return 7;
             default:
-                return 30;
+                return 15;
         }
     }
-    
+
     spawnEnemies() {
         if (this.checkWave == false) {
             if(this.spawn != this.currentWave(this.wave)) {
@@ -251,7 +251,7 @@ export default class Main extends Phaser.Scene {
                 this.waveBoard.setText('Wave: ' + this.wave);
                 this.spawn = 0;
             }
-            
+
             this.checkWave = true;
             this.time.addEvent({
                 delay: 3000,
@@ -340,12 +340,12 @@ export default class Main extends Phaser.Scene {
         if (this.Replay.isDown) {
             this.scene.restart();
         }
-        
+
         // enemy chase player
         this.monster.children.each(function(enemy) {
             if (this.player.x < enemy.x) {
                 enemy.body.setGravityY(400);
-                enemy.flipX = false; 
+                enemy.flipX = false;
                 enemy.x -= 0.3;
             } else {
                 enemy.body.setGravityY(400);
