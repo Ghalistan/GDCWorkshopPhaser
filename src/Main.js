@@ -78,7 +78,8 @@ export default class Main extends Phaser.Scene {
         this.lasersound = this.sound.add('laser', { loop: false });
         this.jumpsound = this.sound.add('jump', { lopp: false });
         this.boomsound = this.sound.add('boom', { loop: false });
-        this.sound.add('bgm', { loop: true }).play();
+        this.bgm = this.sound.add('bgm', { loop: true });
+        this.bgm.play();
 
         // set score
         this.score = 0;
@@ -338,6 +339,7 @@ export default class Main extends Phaser.Scene {
         }
 
         if (this.Replay.isDown) {
+            this.bgm.stop();
             this.scene.restart();
         }
 
