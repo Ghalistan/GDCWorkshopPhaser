@@ -6,7 +6,10 @@ var config = {
     width: 640,
     height: 480,
     physics: {
-        default: 'arcade'
+        default: 'arcade',
+        arcade: {
+          debug: true
+        }
     },
     scene: [Main]
 };
