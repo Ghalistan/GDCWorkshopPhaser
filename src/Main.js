@@ -19,6 +19,10 @@ export default class Main extends Phaser.Scene {
         this.load.spritesheet('monster-idle', 'assets/monster/crab-idle.png', { frameWidth: 48, frameHeight: 32 });
         this.load.spritesheet('monster-walk', 'assets/monster/crab-walk.png', { frameWidth: 48, frameHeight: 32 });
 
+        // monster jumper
+        this.load.spritesheet('jumper-idle', 'assets/monster/jumper-idle.png', { frameWidth: 47, frameHeight: 32 });
+        this.load.image('jumper-jump', 'assets/monster/jumper-jump.png');
+
         // effects
         this.load.spritesheet('blow', 'assets/fx/enemy-death.png', { frameWidth: 67, frameHeight: 48 });
         this.load.spritesheet('shot', 'assets/fx/shot.png', { frameWidth: 6, frameHeight: 4 });
@@ -63,6 +67,9 @@ export default class Main extends Phaser.Scene {
         // check monster
         this.spawn = 0;
 
+        // timer to spawn enemies
+        this.timerToActive = 0;
+
         // spawn shot
         this.bullet = this.physics.add.group();
 
@@ -74,16 +81,27 @@ export default class Main extends Phaser.Scene {
         this.platforms.setScale(0.8);
         this.platforms.body.immovable = true;
 
+        this.tweens.timeline({
+          targets: this.platforms.body.velocity,
+          loop: -1,
+          tweens: [
+            {x: 0, y: -10, duration: 1000, ease: 'Stepped'},
+            {x: 0, y: 0, duration: 100, ease: 'Stepped'},
+            {x: 0, y: 10, duration: 1000, ease: 'Stepped'},
+            {x: 0, y: 0, duration: 100, ease: 'Stepped'}
+          ]
+        });
+
         // setup audio
         this.lasersound = this.sound.add('laser', { loop: false });
         this.jumpsound = this.sound.add('jump', { lopp: false });
-        this.boomsound = this.sound.add('boom', { loop: false });
+        this.boomsound = this.sound.add('boom', { loop: false, volume: 3 });
         this.bgm = this.sound.add('bgm', { loop: true });
         this.bgm.play();
 
         // set score
         this.score = 0;
-        this.scoreBoard = this.add.text(16, 16,'score: 0', { fontSize: '20px', fill: '#fff' });
+        this.scoreBoard = this.add.text(16, 16,'Score: 0', { fontSize: '20px', fill: '#fff' });
 
         // set wave
         this.wave = 1;
@@ -92,9 +110,6 @@ export default class Main extends Phaser.Scene {
         // set health
         this.health = 3;
         this.healthPoint = this.add.text(280, 16, 'Health: 3', { fontSize: '20px', fill: '#fff', align: 'center' });
-
-        // check wave
-        this.checkWave = false;
 
         // create floor
         this.floor = this.physics.add.sprite(0, 480).setOrigin(0, 0);
@@ -176,6 +191,13 @@ export default class Main extends Phaser.Scene {
             repeat: -1
         });
 
+        this.anims.create({
+            key: 'j-idle',
+            frames: this.anims.generateFrameNumbers('jumper-idle', { start: 0, end: 3 }),
+            frameRate: 8,
+            repeat: -1
+        });
+
         // add collider
         this.physics.add.collider(this.player, this.floor);
         this.physics.add.collider(this.player, this.floor2);
@@ -189,6 +211,8 @@ export default class Main extends Phaser.Scene {
 
         this.physics.add.overlap(this.bullet, this.monster, this.monded, null, this);
         this.physics.add.overlap(this.player, this.monster, this.playerhit, null, this);
+
+        this.doJumperJump = 0;
     }
 
     playerhit(player, monster) {
@@ -217,7 +241,7 @@ export default class Main extends Phaser.Scene {
         var animboom = this.add.sprite(monster.x, monster.y).play('boom', true);
         this.boomsound.play();
         animboom.on('animationcomplete', function() {
-            animboom.destroy();
+            this.destroy();
         });
 
         this.score += 10;
@@ -235,32 +259,42 @@ export default class Main extends Phaser.Scene {
         }
     }
 
-    spawnEnemies() {
-        if (this.checkWave == false) {
-            if(this.spawn != this.currentWave(this.wave)) {
-                var rand = Phaser.Math.Between(0,1);
-                if (rand == 1) {
-                    var crab = this.monster.create(-10, 300, 'monster-idle');
-                    crab.anims.play('crab-idle');
-                } else {
-                    var crab = this.monster.create(650, 300, 'monster-idle');
-                    crab.anims.play('crab-idle');
-                }
-                this.spawn += 1;
-            } else if (this.spawn == this.currentWave(this.wave) && this.monster.countActive(true) == 0) {
-                this.wave += 1;
-                this.waveBoard.setText('Wave: ' + this.wave);
-                this.spawn = 0;
-            }
+    timeToSpawn(timer){
+      this.timerToActive--;
+      if (this.timerToActive < 0){
+        this.doSpawnEnemies();
+        this.timerToActive = timer;
+      }
+    }
 
-            this.checkWave = true;
-            this.time.addEvent({
-                delay: 3000,
-                callback: () => {
-                    this.checkWave = false;
-                }
-            });
-        }
+    doSpawnEnemies() {
+      if (this.spawn != this.currentWave(this.wave)) {
+          var rand = Phaser.Math.Between(0,1);
+          if (rand == 1) {
+            if (this.wave != 2){
+              var crab = this.monster.create(-10, 300, 'monster-idle');
+              crab.anims.play('crab-idle');
+            }
+            else {
+              var jumper = this.monster.create(-10, 300, 'jumper-idle');
+              jumper.anims.play('j-idle');
+            }
+          } else {
+            if (this.wave != 2){
+              var crab = this.monster.create(650, 300, 'monster-idle');
+              crab.anims.play('crab-idle');
+            }
+            else{
+              var jumper = this.monster.create(650, 300, 'jumper-idle');
+              jumper.anims.play('j-idle');
+            }
+          }
+          this.spawn += 1;
+      } else if (this.spawn == this.currentWave(this.wave) && this.monster.countActive(true) == 0) {
+          this.wave += 1;
+          this.waveBoard.setText('Wave: ' + this.wave);
+          this.spawn = 0;
+      }
     }
 
     doShoot(check) {
@@ -289,7 +323,7 @@ export default class Main extends Phaser.Scene {
 
     update()
     {
-        this.spawnEnemies();
+        this.timeToSpawn(180);
 
         // moving input
         if (!this.player.body.touching.down) {
@@ -332,12 +366,13 @@ export default class Main extends Phaser.Scene {
         }
 
         // jump input
-        if (this.cursors.up.isDown && this.player.body.touching.down) {
+        if (this.cursors.up.isDown && this.player.body.touching.down && this.health > 0) {
             this.player.setVelocityY(-330);
             this.player.anims.play('p-jump', true);
             this.jumpsound.play();
         }
 
+        // do replay
         if (this.Replay.isDown) {
             this.bgm.stop();
             this.scene.restart();
@@ -348,12 +383,58 @@ export default class Main extends Phaser.Scene {
             if (this.player.x < enemy.x) {
                 enemy.body.setGravityY(400);
                 enemy.flipX = false;
-                enemy.x -= 0.3;
             } else {
                 enemy.body.setGravityY(400);
                 enemy.flipX = true;
-                enemy.x += 0.3;
             }
+            this.enemyBehavior(enemy);
         });
+    }
+
+    jumperAct(x, enemy){
+      if (this.doJumperJump < 0){
+        this.time.addEvent({
+          delay: 3000,
+          callback: () => {
+            let yHigh = Phaser.Math.RND.between(240, 260);
+            if ((enemy.body != null) && enemy.body.touching.down){
+              enemy.setVelocity(x, -yHigh);
+              console.log("do jump");
+            }
+          }
+        });
+        this.doJumperJump = 210;
+      }
+    }
+
+    enemyBehavior(enemy){
+      if (this.wave == 2){
+        let xPos = Phaser.Math.RND.between(50, 70);
+        if (enemy.flipX){
+          // set move by gravity
+          this.jumperAct(xPos, enemy);
+          if (enemy.body.touching.down){
+            enemy.setVelocityX(0);
+          }
+          this.doJumperJump--;
+        }
+        else {
+          this.jumperAct(-xPos, enemy);
+          if (enemy.body.touching.down){
+            enemy.setVelocityX(0);
+          }
+          this.doJumperJump--;
+        }
+      }
+      else{
+        if (enemy.flipX){
+          // set move by gravity
+          enemy.setVelocityX(30);
+        }
+        else {
+          // set move by gravity
+          enemy.setVelocityX(-30);
+        }
+      }
     }
 }
