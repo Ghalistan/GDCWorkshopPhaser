@@ -5,7 +5,7 @@ Thumbs.db
 *.suo
 *.sublime-project
 *.sublime-workspace
-.eslintc
+.eslintrc
 
 # Vendors
 node_modules/
